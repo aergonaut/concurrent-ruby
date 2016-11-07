@@ -204,12 +204,58 @@ module Concurrent
       end
     end
 
-    # Return either the value of self or the given default value.
+    # Return either the value of self or the given default value. The default
+    # can be given as a parameter or can be computed from a block. N.b. if
+    # a block is given it takes priority over the default parameter.
     #
+    # @param default [Object] The default value to return.
+    # @yield [reason] Yields the reason to the block to compute the default.
     # @return [Object] The value of self when `Just`; else the given default.
-    def or(other)
-      just? ? just : other
+    def or(default = nil)
+      if just?
+        value
+      elsif block_given?
+        yield reason
+      else
+        default
+      end
     end
+
+    # Transform this `Maybe` by applying the given block to the contained value,
+    # returning a new `Just` containing the new value with the block applied, or
+    # `Nothing` if this `Maybe` is `Nothing`.
+    # 
+    # @yield [value] A block that will be applied to the contained value
+    # @return [Maybe] If self is `Just`, then `Just` of the contained value with
+    #   the block applied; `Nothing` otherwise.
+    def map(&block)
+      if just?
+        new_value = yield value
+        Maybe.just(new_value)
+      else
+        Maybe.nothing(reason)
+      end
+    end
+
+    alias :fmap :map
+
+    # Like `Maybe#map` but the given block must instead return a new instance of
+    # `Maybe` that replaces this instance in the chain.
+    # 
+    # @yield [value] A block that will be applied to the contained value,
+    #   returning a new instance of `Maybe`.
+    # @return [Maybe] If self is `Just`, then the return value of the given
+    #   block; `Nothing` otherwise.
+    def flat_map(&block)
+      if just?
+        yield value
+      else
+        Maybe.nothing(reason)
+      end
+    end
+
+    alias :bind :flat_map
+    alias :and_then :flat_map
 
     private
 

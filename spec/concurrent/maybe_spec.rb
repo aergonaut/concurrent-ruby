@@ -212,7 +212,6 @@ module Concurrent
     end
 
     context '#or' do
-
       it 'returns the value when something' do
         maybe = Maybe.just(42)
         actual = maybe.or(100)
@@ -223,6 +222,58 @@ module Concurrent
         maybe = Maybe.nothing
         actual = maybe.or(100)
         expect(actual).to eq 100
+      end
+
+      it "calls the block if a block is given when nothing" do
+        maybe = Maybe.nothing
+        actual = maybe.or { 100 }
+        expect(actual).to eq 100
+      end
+    end
+
+    context '#map' do
+      it "applies the function when something" do
+        maybe_5 = Maybe.just(5)
+        maybe_20 = maybe_5.map { |x| x * 4 }
+        expect(maybe_20).to eq(Maybe.just(20))
+      end
+
+      it "returns nothing when nothing and does not call the block" do
+        nothing = Maybe.nothing
+        also_nothing = nothing.map { raise "boom!" }
+        expect(also_nothing).to eq(Maybe.nothing)
+      end
+
+      it "is available as fmap" do
+        maybe_5 = Maybe.just(5)
+        maybe_20 = maybe_5.fmap { |x| x * 4 }
+        expect(maybe_20).to eq(Maybe.just(20))
+      end
+    end
+
+    context '#flat_map' do
+      it "applies the function when something" do
+        maybe_5 = Maybe.just(5)
+        maybe_20 = maybe_5.flat_map { |x| Maybe.just(x * 4) }
+        expect(maybe_20).to eq(Maybe.just(20))
+      end
+
+      it "returns nothing when nothing and does not call the block" do
+        nothing = Maybe.nothing
+        also_nothing = nothing.flat_map { raise "boom!" }
+        expect(also_nothing).to eq(Maybe.nothing)
+      end
+
+      it "is available as and_then" do
+        maybe_5 = Maybe.just(5)
+        maybe_20 = maybe_5.and_then { |x| Maybe.just(x * 4) }
+        expect(maybe_20).to eq(Maybe.just(20))
+      end
+
+      it "is available as bind" do
+        maybe_5 = Maybe.just(5)
+        maybe_20 = maybe_5.bind { |x| Maybe.just(x * 4) }
+        expect(maybe_20).to eq(Maybe.just(20))
       end
     end
   end
